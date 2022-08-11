@@ -66,20 +66,59 @@ for i in playerssh:
 			bad_letters.add(j)
 
 #writing parsed data to the csv file
-f = open(env.pl_csv_src, 'w')
+f = open(env.pl_csv_src, 'w', newline='')
 writer = csv.writer(f)
 
 rows = []
-
 ind = 0
 
+shheader = soupsh.find("caption", string="League Comparison Table")
+shheader = shheader.find_next("tr", attrs={'class': None})
+
+head_info = shheader.find_all('th')
+
+rows.append([])
+rows[ind].append(head_info[0].text)
+rows[ind].append(head_info[2].text)
+rows[ind].append(head_info[3].text)
+rows[ind].append(head_info[5].text)
+
+for i in head_info[7:-1]:
+	rows[ind].append(i.text)
+
+psheader = soupps.find("caption", string="League Comparison Table")
+psheader = psheader.find_next("tr", attrs={'class': None})
+
+head_info = psheader.find_all('th')
+
+for i in head_info[8:-1]:
+	rows[ind].append(i.text)
+
+crheader = soupcr.find("caption", string="League Comparison Table")
+crheader = crheader.find_next("tr", attrs={'class': None})
+
+head_info = crheader.find_all('th')
+
+for i in head_info[8:-1]:
+	rows[ind].append(i.text)
+
+dfheader = soupdf.find("caption", string="League Comparison Table")
+dfheader = dfheader.find_next("tr", attrs={'class': None})
+
+head_info = dfheader.find_all('th')
+
+for i in head_info[8:-1]:
+	rows[ind].append(i.text)
+
+ind += 1
+
 for i in player_stats[0]:
-	rows.append([])
 	name = ""
 	club = ""
 	player_info = i.find_all('td')
 	if (player_info[2].text.find('GK') > -1):
 		continue
+	rows.append([])
 	for a in player_info[0].text:
 		if (a in bad_letters):
 			b = letter_table[a]
@@ -142,7 +181,7 @@ for i in clubs:
 		if (not('a' <= j <= 'z') and not('A' <= j <= 'Z') and j != ' ' and not('0' <= j <= '9')):
 			bad_letters.add(j)
 
-f1 = open(env.cl_csv_src, 'w')
+f1 = open(env.cl_csv_src, 'w', newline='')
 writer = csv.writer(f1)
 
 for i in clubs:
