@@ -67,47 +67,47 @@ for i in playerssh:
 
 #writing parsed data to the csv file
 f = open(env.pl_csv_src, 'w', newline='')
-writer = csv.writer(f)
+writer = csv.writer(f, delimiter=',')
 
 rows = []
 ind = 0
 
-shheader = soupsh.find("caption", string="League Comparison Table")
+shheader = soupsh.find("table", id="stats_shooting")
 shheader = shheader.find_next("tr", attrs={'class': None})
 
 head_info = shheader.find_all('th')
 
 rows.append([])
-rows[ind].append(head_info[0].text)
-rows[ind].append(head_info[2].text)
+rows[ind].append(head_info[1].text)
 rows[ind].append(head_info[3].text)
-rows[ind].append(head_info[5].text)
+rows[ind].append(head_info[4].text)
+rows[ind].append(head_info[6].text)
 
-for i in head_info[7:-1]:
+for i in head_info[8:-1]:
 	rows[ind].append(i.text)
 
-psheader = soupps.find("caption", string="League Comparison Table")
+psheader = soupps.find("table", id="stats_passing")
 psheader = psheader.find_next("tr", attrs={'class': None})
 
 head_info = psheader.find_all('th')
 
-for i in head_info[8:-1]:
+for i in head_info[9:-1]:
 	rows[ind].append(i.text)
 
-crheader = soupcr.find("caption", string="League Comparison Table")
+crheader = soupcr.find("table", id="stats_gca")
 crheader = crheader.find_next("tr", attrs={'class': None})
 
 head_info = crheader.find_all('th')
 
-for i in head_info[8:-1]:
+for i in head_info[9:-1]:
 	rows[ind].append(i.text)
 
-dfheader = soupdf.find("caption", string="League Comparison Table")
+dfheader = soupdf.find("table", id="stats_defense")
 dfheader = dfheader.find_next("tr", attrs={'class': None})
 
 head_info = dfheader.find_all('th')
 
-for i in head_info[8:-1]:
+for i in head_info[9:-1]:
 	rows[ind].append(i.text)
 
 ind += 1
@@ -143,7 +143,7 @@ for i in player_stats[0]:
 	ind += 1
 
 for table in player_stats[1:]:
-	ind = 0
+	ind = 1
 	for i in table:
 		player_info = i.find_all('td')
 		if (player_info[2].text.find('GK') > -1):
@@ -182,7 +182,20 @@ for i in clubs:
 			bad_letters.add(j)
 
 f1 = open(env.cl_csv_src, 'w', newline='')
-writer = csv.writer(f1)
+writer = csv.writer(f1, delimiter=',')
+
+clheader = soup1.find("caption", string="Big 5 Table Table")
+clheader = clheader.find_next("tr", attrs={'class': None})
+
+head_info = clheader.find_all('th')
+
+row = []
+for i in head_info[1:3]:
+	row.append(i.text)
+for i in head_info[8:-3]:
+	row.append(i.text)
+
+writer.writerow(row)
 
 for i in clubs:
 	club = ""
