@@ -15,13 +15,11 @@ tm_values = pd.read_csv(tmvl_csv_src)
 pl_club_stats = []
 cl_header = list(clubs.columns)[1:]
 
-cl_header.append("Value 2020")
-cl_header.append("Value 2021")
-print(cl_header)
+cl_header.append("Value_2020")
+cl_header.append("Value_Change")
 
 for i in range(len(clubs.count()) + 1):
 	pl_club_stats.append([])
-print(pl_club_stats)
 pattern20 = "2020-04..."
 pattern21 = "2021-06..."
 for i in range(len(players)):
@@ -56,14 +54,13 @@ for i in range(len(players)):
 for i in range(len(cl_header) - 2):
 	cl_header[i] = "Cl_" + cl_header[i]
 
-print(pl_club_stats)
 
 for i in range(len(pl_club_stats)):
 	#print(cl_header[i])
 	#print(pl_club_stats[i])
 	players.insert(len(players.count()), cl_header[i], pl_club_stats[i])
 
-del pl_club_stats['Player']
-del pl_club_stats['Squad']
+del players["Player"]
+del players["Squad"]
 
 players.to_csv(env.final_csv, index=False)
