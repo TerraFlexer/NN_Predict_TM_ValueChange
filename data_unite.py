@@ -51,7 +51,7 @@ for i in range(len(players)):
 		if (re.fullmatch(pattern21, row['date'])):
 			value21 = row['market_value']
 	pl_club_stats[-2].append(value20)
-	pl_club_stats[-1].append(value21)
+	pl_club_stats[-1].append(value21 - value20)
 
 for i in range(len(cl_header) - 2):
 	cl_header[i] = "Cl_" + cl_header[i]
@@ -62,5 +62,8 @@ for i in range(len(pl_club_stats)):
 	#print(cl_header[i])
 	#print(pl_club_stats[i])
 	players.insert(len(players.count()), cl_header[i], pl_club_stats[i])
+
+del pl_club_stats['Player']
+del pl_club_stats['Squad']
 
 players.to_csv(env.final_csv, index=False)
