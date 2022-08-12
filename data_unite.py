@@ -27,20 +27,19 @@ for i in range(len(players)):
 	name = players.loc[i].at['Player']
 
 	club_stats = clubs.loc[clubs['Squad'] == squad]
-	for i in range(1, len(club_stats.count())):
-		pl_club_stats[i - 1].append(club_stats.iloc[0].at[cl_header[i - 1]])
-
 	row = tm_players.loc[tm_players['pretty_name'] == name]
 	if (row.empty):
-		pl_club_stats[-2].append(None)
-		pl_club_stats[-1].append(None)
+		players = players.drop(i)
 		continue
 	if (len(row) == 1):
 		pl_id = row.iloc[0].at['player_id']
 	else:
-		pl_club_stats[-2].append(None)
-		pl_club_stats[-1].append(None)
+		players = players.drop(i)
 		continue
+
+	for i in range(1, len(club_stats.count())):
+		pl_club_stats[i - 1].append(club_stats.iloc[0].at[cl_header[i - 1]])
+
 	all_values = tm_values.loc[tm_values['player_id'] == pl_id]
 	for i in range(len(all_values)):
 		row = all_values.iloc[i]
