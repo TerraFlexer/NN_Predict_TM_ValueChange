@@ -1,8 +1,8 @@
-from bs4 import BeautifulSoup 
+from bs4 import BeautifulSoup
 import requests
 import csv
-#import file fith filepathes
 import env
+
 
 #dictionary for changing letters in players' names
 letter_table = {'\'': '', 'ä': 'a', 'ó': 'o', 'Ł': 'L', 'ç': 'c', 'í': 'i', 'ü': 'u', 'ń': 'n', 'ß': 's', 'ö': 'o', '-': ' ', 'ï': 'i',
@@ -13,6 +13,7 @@ letter_table = {'\'': '', 'ä': 'a', 'ó': 'o', 'Ł': 'L', 'ç': 'c', 'í': 'i',
 leag_pos = {'eng ENG': 1, 'es ESP': 2, 'it ITA': 3, 'de GER': 4, 'fr FRA': 5}
 pos_table = {'DF': 0.1, 'MF': 0.2, 'FW': 0.3, 'DF,MF': 0.15, 'MF,FW': 0.25, 'FW,DF': 0.35, 'MF,DF': 0.15, 'FW,MF': 0.25, 'DF,FW': 0.35}
 
+#opening files with players' stats
 with open(env.plsh_page_src, encoding='utf-8', newline='') as fp: 
     soupsh = BeautifulSoup(fp, "html.parser")
 
@@ -27,6 +28,7 @@ with open(env.pldf_page_src, encoding='utf-8', newline='') as fp:
 
 player_stats = []
 
+#finding table rows with stats
 sh = soupsh.find_all('tr')
 playerssh = []
 for i in sh:
@@ -65,10 +67,11 @@ for i in playerssh:
 		if (not('a' <= j <= 'z') and not('A' <= j <= 'Z') and j != ' ' and not('0' <= j <= '9')):
 			bad_letters.add(j)
 
-#writing parsed data to the csv file
+#creating csv file and writer for him
 f = open(env.pl_csv_src, 'w', newline='')
 writer = csv.writer(f, delimiter=',')
 
+#making header and rows for the csv file
 rows = []
 ind = 0
 
@@ -155,6 +158,7 @@ for table in player_stats[1:]:
 				rows[ind].append(float(j.text))
 		ind += 1
 
+#writing rows in the file
 for row in rows:
 	writer.writerow(row)
 
@@ -162,9 +166,11 @@ f.close()
 
 
 
+#opening file with club_stats
 with open(env.cl_page_src, encoding='utf-8', newline='') as fp: 
     soup1 = BeautifulSoup(fp, "html.parser")
 
+#finding table with stats
 uh = soup1.find_all('tr')
 clubs = []
 for i in uh:
@@ -181,9 +187,11 @@ for i in clubs:
 		if (not('a' <= j <= 'z') and not('A' <= j <= 'Z') and j != ' ' and not('0' <= j <= '9')):
 			bad_letters.add(j)
 
+#creating csv file and writer for him
 f1 = open(env.cl_csv_src, 'w', newline='')
 writer = csv.writer(f1, delimiter=',')
 
+#finding header for clubs
 clheader = soup1.find("caption", string="Big 5 Table Table")
 clheader = clheader.find_next("tr", attrs={'class': None})
 
@@ -198,6 +206,7 @@ for i in head_info[8:-3]:
 
 writer.writerow(row)
 
+#writing rows with club_stats
 for i in clubs:
 	club = ""
 	row = []
