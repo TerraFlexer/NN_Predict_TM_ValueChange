@@ -47,8 +47,8 @@ for i in range(len(players)):
 			value20 = row['market_value']
 		if (re.fullmatch(pattern21, row['date'])):
 			value21 = row['market_value']
-	pl_club_stats[-2].append(value20)
-	pl_club_stats[-1].append(value21 - value20)
+	pl_club_stats[-2].append(value20 / 10000000)
+	pl_club_stats[-1].append((value21 - value20) / 10000000)
 
 for i in range(len(cl_header) - 2):
 	cl_header[i] = "Cl_" + cl_header[i]
