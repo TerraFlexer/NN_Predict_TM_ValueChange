@@ -9,25 +9,28 @@ letter_table = {'\'': '', 'ä': 'a', 'ó': 'o', 'Ł': 'L', 'ç': 'c', 'í': 'i',
 'É': 'E', 'ø': 'o', 'ğ': 'g', 'ě': 'e', 'ć': 'c', 'á': 'a', 'é': 'e', 'İ': 'I', 'ú': 'u', 'ş': 's', 'ë': 'e', 'Ü': 'U', 'Ç': 'C', 'ã': 'a',
 'č': 'c', 'Ø': 'O', 'š': 's', 'ð': 'd', 'Ș': 'S', 'Ñ': 'N', 'ă': 'a', 'ý': 'y', 'è': 'e', 'ô': 'o', 'ō': 'o', 'ř': 'r', 'ț': 't', 'ò': 'o',
 'ł': 'l', 'Ó': 'O', 'ı': 'i', 'Ö': 'O', 'î': 'i', 'æ': 'e', 'ę': 'e', 'ñ': 'n', 'ą': 'a', 'Á': 'A', 'Đ': 'D', 'Ľ': 'L', 'ó': 'o', 'å': 'a',
-'Ć': 'C', 'é': 'e', '.': '', 'ž': 'z', 'ș': 's', 'à': 'a', 'ê': 'e', 'Š': 'S', ',': ' ', '▲': ''}
+'Ć': 'C', 'é': 'e', '.': '', 'ž': 'z', 'ș': 's', 'à': 'a', 'ê': 'e', 'Š': 'S', ',': ' ', '▲': '', 'â': 'a', 'Ž': 'Z', 'ů': 'u', 'Ş': 'S', 'Ż': 'Z'}
 leag_pos = {'eng ENG': 1, 'es ESP': 2, 'it ITA': 3, 'de GER': 4, 'fr FRA': 5}
 pos_table = {'DF': 0.1, 'MF': 0.2, 'FW': 0.3, 'DF,MF': 0.15, 'MF,FW': 0.25, 'FW,DF': 0.35, 'MF,DF': 0.15, 'FW,MF': 0.25, 'DF,FW': 0.35}
+
+#set with unusual letters
+bad_letters = set()
 
 def parse_players(season):
 	#opening files with players' stats
 	with open(env.plsh_page_src[season], encoding='utf-8', newline='') as fp: 
 		soupsh = BeautifulSoup(fp, "html.parser")
 
-		with open(env.plps_page_src[season], encoding='utf-8', newline='') as fp: 
-			soupps = BeautifulSoup(fp, "html.parser")
+	with open(env.plps_page_src[season], encoding='utf-8', newline='') as fp: 
+		soupps = BeautifulSoup(fp, "html.parser")
 
-			with open(env.plcr_page_src[season], encoding='utf-8', newline='') as fp: 
-				soupcr = BeautifulSoup(fp, "html.parser")
+	with open(env.plcr_page_src[season], encoding='utf-8', newline='') as fp: 
+		soupcr = BeautifulSoup(fp, "html.parser")
 
-				with open(env.pldf_page_src[season], encoding='utf-8', newline='') as fp: 
-					soupdf = BeautifulSoup(fp, "html.parser")
+	with open(env.pldf_page_src[season], encoding='utf-8', newline='') as fp: 
+		soupdf = BeautifulSoup(fp, "html.parser")
 
-					player_stats = []
+	player_stats = []
 
 	#finding table rows with stats
 	sh = soupsh.find_all('tr')
@@ -35,31 +38,32 @@ def parse_players(season):
 	for i in sh:
 		if (i.find_all('td', attrs={"data-stat": "player"}) != []):
 			playerssh.append(i)
-			player_stats.append(playerssh)
 
-			ps = soupps.find_all('tr')
-			playersps = []
-			for i in ps:
-				if (i.find_all('td', attrs={"data-stat": "player"}) != []):
-					playersps.append(i)
-					player_stats.append(playersps)
+	player_stats.append(playerssh)
 
-					cr = soupcr.find_all('tr')
-					playerscr = []
-					for i in cr:
-						if (i.find_all('td', attrs={"data-stat": "player"}) != []):
-							playerscr.append(i)
-							player_stats.append(playerscr)
+	ps = soupps.find_all('tr')
+	playersps = []
+	for i in ps:
+		if (i.find_all('td', attrs={"data-stat": "player"}) != []):
+			playersps.append(i)
 
-							df = soupdf.find_all('tr')
-							playersdf = []
-							for i in df:
-								if (i.find_all('td', attrs={"data-stat": "player"}) != []):
-									playersdf.append(i)
-									player_stats.append(playersdf)
+	player_stats.append(playersps)
 
-	#set with unusual letters
-	bad_letters = set()
+	cr = soupcr.find_all('tr')
+	playerscr = []
+	for i in cr:
+		if (i.find_all('td', attrs={"data-stat": "player"}) != []):
+			playerscr.append(i)
+
+	player_stats.append(playerscr)
+
+	df = soupdf.find_all('tr')
+	playersdf = []
+	for i in df:
+		if (i.find_all('td', attrs={"data-stat": "player"}) != []):
+			playersdf.append(i)
+
+	player_stats.append(playersdf)
 
 	#finding and adding unusual letters to the set
 	for i in playerssh:
@@ -250,8 +254,10 @@ def parse_clubs(season):
 	#adding league rank without last not utf-8 symbol
 	row.append(head_info[3].text[:-1])
 
-	#adding ramining stats names header
-	for i in head_info[8:-3]:
+	#adding ramining stats names header except Pts and Pts/MP
+	for i in head_info[8:11]:
+		row.append(i.text)
+	for i in head_info[13:-3]:
 		row.append(i.text)
 
 	#writing header to the csv
@@ -282,8 +288,10 @@ def parse_clubs(season):
 		#adding league rank
 		row.append(club_info[2].text)
 
-		#adding other club stats
-		for j in club_info[7:-3]:
+		#adding reamining club stats except Pts and Pts/MP
+		for j in club_info[7:10]:
+			row.append(j.text)
+		for j in club_info[12:-3]:
 			row.append(j.text)
 
 		#writing row to the csv
