@@ -45,7 +45,11 @@ def create_header(pl_frame, cl_frame):
 #function creating and writing rows into the final.csv
 def cr_wr_rows(pl_frame, cl_frame, patterns1, patterns2):
 	for i in range(len(pl_frame)):
-		#initializing row with player_statrs
+		#exlude players who played less than 5 matches in total(counting in total minutes)
+		if (pl_frame.iloc[i].at["90s"] < 5):
+			continue
+
+		#initializing row with player_stats
 		row = list(pl_frame.iloc[i])
 
 		#extracting squad name and player name to connect with other dbs
