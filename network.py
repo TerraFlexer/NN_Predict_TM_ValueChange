@@ -50,7 +50,7 @@ Y = torch.Tensor(trainy.values)
 if (testing):
 	model.load_state_dict(torch.load(env.nn_state_dict))
 	model.eval()
-	for i in range(250, 500):
+	for i in range(len(X)):
 		print(model(X[i]), " ", Y[i])
 else:
 	optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)   
@@ -82,11 +82,11 @@ else:
 	x = []
 	y = []
 
-	epochs = 6000
+	epochs = 5000
 	coeff = 10
 	for epoch in range(epochs):
 		L = fit(model, X, Y, optimizer)
-		if (epoch % 1500 == 0 and epoch != 0):
+		if (epoch % 1000 == 0 and epoch != 0):
 			learning_rate /= coeff
 			optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 			coeff /= 2
