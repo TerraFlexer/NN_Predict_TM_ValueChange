@@ -5,23 +5,35 @@ from parserr import *
 import csv
 
 
-#array with seasons which are going to be processed
-seasons = ["19-20", "20-21"]
+#array with training_seasons which are going to be processed
+training_seasons = ["19-20", "20-21"]
+
+#array with testing_seasons
+testing_seasons = ["21-22"]
 
 #array with unnecessary columns
 unnec_columns = ["Player", "Squad", "Cl_Squad"]
 
 #patterns for regular
 patterns = {"19": ["2019-04...", "2019-05...", "2019-06...", "2019-07...", "2019-08...", "2019-09..."],
-	"20": ["2020-04...", "2020-05...", "2020-06...", "2020-07...", "2020-08..."], "21": ["2021-05...", "2021-06...", "2021-07...", "2021-08..."]}
+	"20": ["2020-04...", "2020-05...", "2020-06...", "2020-07...", "2020-08..."], "21": ["2021-05...", "2021-06...", "2021-07...", "2021-08..."],
+	"22": ["2022-05...", "2022-06...", "2022-07...", "2022-08..."]}
 
-#arrays with player and clubs databases
-players_db = []
-clubs_db = []
+#arrays with player and clubs databases for training
+tr_players_db = []
+tr_clubs_db = []
+
+#arrays with player and clubs databases for testing
+ts_players_db = []
+ts_clubs_db = []
 
 #creating writer to the final.csv
-f = open(env.final_csv, 'w', newline='')
-writer = csv.writer(f, delimiter=',')
+final_file = open(env.final_csv, 'w', newline='')
+final_writer = csv.writer(final_file, delimiter=',')
+
+#creating writer to the test.csv
+test_file = open(env.test_csv, 'w', newline='')
+test_writer = csv.writer(test_file, delimiter=',')
 
 #opening transfermarkt databases
 tm_players = pd.read_csv(env.tmpl_csv_src)
@@ -44,7 +56,7 @@ def create_header(pl_frame, cl_frame):
 	return header
 
 #function creating and writing rows into the final.csv
-def cr_wr_rows(pl_frame, cl_frame, patterns1, patterns2):
+def cr_wr_rows(pl_frame, cl_frame, patterns1, patterns2, writer):
 	for i in range(len(pl_frame)):
 		#exlude players who played less than 5 matches in total(counting in total minutes)
 		if (pl_frame.iloc[i].at["90s"] < 5):
@@ -93,31 +105,59 @@ def cr_wr_rows(pl_frame, cl_frame, patterns1, patterns2):
 		writer.writerow(row)
 
 
-#launching parsing functions generating seasonal stats for players and clubs
-for season in seasons:
+#launching parsing functions generating training seasonal stats for players and clubs
+for season in training_seasons:
 	parse_players(season)
 	parse_clubs(season)
-	players_db.append(pd.read_csv(env.pl_csv_src[season]))
-	clubs_db.append(pd.read_csv(env.cl_csv_src[season]))
+	tr_players_db.append(pd.read_csv(env.pl_csv_src[season]))
+	tr_clubs_db.append(pd.read_csv(env.cl_csv_src[season]))
 
-#uniting stats to a dicts
-pl_frames = dict(zip(seasons, players_db))
-cl_frames = dict(zip(seasons, clubs_db))
+#launching parsing functions generating testing seasonal stats for players and clubs
+for season in testing_seasons:
+	parse_players(season)
+	parse_clubs(season)
+	ts_players_db.append(pd.read_csv(env.pl_csv_src[season]))
+	ts_clubs_db.append(pd.read_csv(env.cl_csv_src[season]))
+
+#uniting training stats to a dicts
+tr_pl_frames = dict(zip(training_seasons, tr_players_db))
+tr_cl_frames = dict(zip(training_seasons, tr_clubs_db))
+
+#uniting training stats to a dicts
+ts_pl_frames = dict(zip(testing_seasons, ts_players_db))
+ts_cl_frames = dict(zip(testing_seasons, ts_clubs_db))
 
 #flag for header
 header_created_flag = 0
 
-for season in seasons:
+#processing training data
+for season in training_seasons:
 	#if header is not created - create it and write to the final.csv
 	if (not(header_created_flag)):
-		writer.writerow(create_header(pl_frames[season], cl_frames[season]))
+		final_writer.writerow(create_header(tr_pl_frames[season], tr_cl_frames[season]))
 		header_created_flag = 1
 
 	#process seasonal stats
-	cr_wr_rows(pl_frames[season], cl_frames[season], patterns[season[:2]], patterns[season[3:]])
+	cr_wr_rows(tr_pl_frames[season], tr_cl_frames[season], patterns[season[:2]], patterns[season[3:]], final_writer)
+
+#flag for header
+header_created_flag = 0
+
+#processing testing data
+for season in testing_seasons:
+	#if header is not created - create it and write to the final.csv
+	if (not(header_created_flag)):
+		test_writer.writerow(create_header(ts_pl_frames[season], ts_cl_frames[season]))
+		header_created_flag = 1
+
+	#process seasonal stats
+	cr_wr_rows(ts_pl_frames[season], ts_cl_frames[season], patterns[season[:2]], patterns[season[3:]], test_writer)
 
 #closing final
-f.close()
+final_file.close()
+
+#closing test
+test_file.close()
 
 #opening db again to delete needless columns
 final = pd.read_csv(env.final_csv)
@@ -128,3 +168,13 @@ for column in unnec_columns:
 
 #convert final dataframe to final.csv
 final.to_csv(env.final_csv, index=False)
+
+#opening db again to delete needless columns
+test = pd.read_csv(env.test_csv)
+
+#deleting needless columns
+for column in unnec_columns:
+	del test[column]
+
+#convert final dataframe to final.csv
+test.to_csv(env.test_csv, index=False)
