@@ -87,8 +87,8 @@ def cr_wr_rows(pl_frame, cl_frame, patterns1, patterns2, writer):
 		#find rows with exact player_id
 		all_values = tm_values.loc[tm_values['player_id'] == pl_id]
 
-		#print(all_values)
 
+		found = 0
 		#extract values
 		for i in range(len(all_values)):
 			vl_row = all_values.iloc[i]
@@ -98,10 +98,14 @@ def cr_wr_rows(pl_frame, cl_frame, patterns1, patterns2, writer):
 			for pattern2 in patterns2:
 				if (re.fullmatch(pattern2, vl_row['date'])):
 					end_vl = vl_row['market_value']
+					found = 1
 
 		#add values to the row
 		row.append(start_vl / 1000000)
-		row.append(end_vl / 1000000)
+		if (found):
+			row.append(end_vl / 1000000)
+		else:
+			row.append(start_vl / 1000000)
 		writer.writerow(row)
 
 
