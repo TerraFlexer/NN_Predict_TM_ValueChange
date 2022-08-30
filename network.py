@@ -10,52 +10,69 @@ import env
 
 final_src = env.final_csv
 test_src = env.test_csv
+
+#variable for loading network or training new
 testing = 0
-learning_rate = 0.0025
 
-final = pd.read_csv(final_src)
-test = pd.read_csv(test_src)
+final = []
+test = []
 
-#columns count a.k. (amount of input) + (amount of output)
-cnt_inp = len(final.count())
+#columns count in finals a.k. (amount of input) + (amount of output)
+fcnt_inp = []
+
+#colimns count in tests a.k. (amount of input) + (amount of output)
+tcnt_inp = []
+
+for fin in final_src:
+	final.append(pd.read_csv(fin))
+	fcnt_inp.append(len(final[-1].count()) - 5)
+for tes in test_src:
+	test.append(pd.read_csv(tes))
+	tcnt_inp.append(len(test[-1].count()) - 5)
+
 
 #creating the nn model
 class Net(nn.Module):
-	def __init__(self, dens1, dens2, dens3):
+	def __init__(self, inpdens, dens1, dens2):
 		super(Net, self).__init__()
-		self.fc1 = nn.Linear(cnt_inp - 1, dens1)
+		self.fc1 = nn.Linear(inpdens, dens1)
 		self.fc2 = nn.Linear(dens1, dens2)
-		self.fc3 = nn.Linear(dens2, dens3)
-		self.fc4 = nn.Linear(dens3, 1)
+		self.fc3 = nn.Linear(dens2, 1)
 	def forward(self, x):
 		x = self.fc1(x)
 		x = nn.ReLU()(x)
 		x = self.fc2(x)
 		x = nn.ReLU()(x)
 		x = self.fc3(x)
-		x = nn.ReLU()(x)
-		x = self.fc4(x)
 		return x
 
 
-model = Net(200, 200, 150)
-model1 = Net(300, 200, 150)
+X = []
+Y = []
+tX = []
+tY = []
 
-#separating input and output train data
-trainx = final.drop("Value_Change", axis=1)
-trainy = final["Value_Change"]
+#separating input and output train data and converting it to tensor
+for fin in final:
+	trainx = fin.drop("Value_Change", axis=1)
+	trainx = trainx.drop("Player", axis = 1)
+	trainx = trainx.drop("Squad", axis = 1)
+	trainx = trainx.drop("Pos", axis = 1)
+	trainx = trainx.drop("Cl_Squad", axis = 1)
+	trainy = fin["Value_Change"]
+	X.append(torch.Tensor(trainx.values))
+	Y.append(torch.Tensor(trainy.values))
 
-#converting train data to the torch tensor
-X = torch.Tensor(trainx.values)
-Y = torch.Tensor(trainy.values)
-
-#separating testing input and output data
-testx = test.drop("Value_Change", axis=1)
-testy = test["Value_Change"]
-
-#converting testing data to the torch tensor
-tX = torch.Tensor(testx.values)
-tY = torch.Tensor(testy.values)
+#separating input and output testing data and converting it to tensor
+for tes in test:
+	testx = tes.drop("Value_Change", axis=1)
+	testx = testx.drop("Player", axis = 1)
+	testx = testx.drop("Squad", axis = 1)
+	testx = testx.drop("Pos", axis = 1)
+	testx = testx.drop("Cl_Squad", axis = 1)
+	testy = tes["Value_Change"]
+	tX.append(torch.Tensor(testx.values))
+	tY.append(torch.Tensor(testy.values))
 
 loss = nn.MSELoss()
 
@@ -71,12 +88,8 @@ if (testing):
 	L = loss(y, tY)
 	print(L / len(tY))
 else:
-	optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)   
-	optimizer1 = torch.optim.Adam(model1.parameters(), lr=learning_rate)
-	loss = nn.MSELoss()
-
 	#function for training and testing
-	def fit(model, X, Y, optimizer, llambda, batch_size=70, train=True):
+	def fit(model, X, Y, optimizer, llambda, batch_size=50, train=True):
 		model.train(train)
 		sumL, sumA, numB = 0, 0, int(len(X) / batch_size)
        
@@ -102,7 +115,7 @@ else:
 
 		return sumL / numB
 
-	def test(model, X, Y, llambda, batch_size=70):
+	def test(model, X, Y, llambda, batch_size=30):
 		model.eval()
 		sumL, sumA, numB = 0, 0, int(len(X) / batch_size)
 		for i in range(0, numB * batch_size, batch_size):
@@ -122,50 +135,37 @@ else:
 
 		return sumL / numB
 
+
+	#learning rate for networks
+	learning_rate = 0.000025
+
+	#creating models and optimizers for them
+	models = []
+	optimizers = []
+	for i in range(3):
+		models.append(Net(fcnt_inp[i], 200, 100))
+		optimizers.append(torch.optim.Adam(models[i].parameters(), lr=learning_rate))  
+
 	#creating arrays with dots for graph
-	x = []
-	y = []
-	vy = []
-	y1 = []
-	vy1 = []
+	x = [[], [], []]
+	y = [[], [], []]
+	vy = [[], [], []]
 
-	epochs = 400
-	coeff = 10
-	for epoch in range(epochs):
-		L = fit(model, X, Y, optimizer, 0.001)
-		vL = test(model, tX, tY, 0.001)
-		if (epoch % 200 == 0 and epoch != 0):
-			learning_rate /= coeff
-			optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-			coeff /= 2
-		#print(f'epoch: {epoch:5d} loss: {L:.4f}' )
-		if ((epoch % 10) == 0):
-			print(f'epoch: {epoch:5d} loss: {L:.4f}, validation_loss: {vL:.4f}')
-		x.append(epoch)
-		y.append(L)
-		vy.append(vL)
+	def train(epochs, model, X, Y, gx, gy, gvy, tX, tY, optimizer):
+		for epoch in range(epochs):
+			L = fit(model, X, Y, optimizer, 0.001)
+			vL = test(model, tX, tY, 0.001)
+			#print(f'epoch: {epoch:5d} loss: {L:.4f}' )
+			if ((epoch % 10) == 0):
+				print(f'epoch: {epoch:5d} loss: {L:.4f}, validation_loss: {vL:.4f}')
+			gx.append(epoch)
+			gy.append(L)
+			gvy.append(vL)
 
-	learning_rate = 0.0025
-	coeff = 10
-	for epoch in range(epochs):
-		L = fit(model1, X, Y, optimizer1, 0.001)
-		vL = test(model1, tX, tY, 0.001)
-		if (epoch % 200 == 0 and epoch != 0):
-			learning_rate /= coeff
-			optimizer1 = torch.optim.Adam(model1.parameters(), lr=learning_rate)
-			coeff /= 2
-		#print(f'epoch: {epoch:5d} loss: {L:.4f}' )
-		if ((epoch % 10) == 0):
-			print(f'epoch: {epoch:5d} loss: {L:.4f}, validation_loss: {vL:.4f}')
-		y1.append(L)
-		vy1.append(vL)
-
-	#saving model_state_dict
-	torch.save(model.state_dict(), env.nn_state_dict)
-
-	#creating graph
-	plt.plot(x, y, 'g-', x, vy, 'r-', x, y1, 'b-', x, vy1, 'y-')
-	plt.xlabel(r'$epoch$')
-	plt.ylabel(r'$loss$')
-	plt.title(r'$loss$')
-	plt.show()
+	for i in range(3):
+		train(500, models[i], X[i], Y[i], x[i], y[i], vy[i], tX[i], tY[i], optimizers[i])
+		plt.plot(x[i], y[i], 'g-', x[i], vy[i], 'r-')
+		plt.xlabel(r'$epoch$')
+		plt.ylabel(r'$loss$')
+		plt.title(r'$loss$')
+		plt.show()
