@@ -137,33 +137,46 @@ else:
 
 
 	#learning rate for networks
-	learning_rate = 0.000025
+	learning_rate = [0.000025, 0.000025, 0.000025]
 
 	#creating models and optimizers for them
 	models = []
 	optimizers = []
+	llambda = [0.01, 0.05, 0.05]
 	for i in range(3):
-		models.append(Net(fcnt_inp[i], 200, 100))
-		optimizers.append(torch.optim.Adam(models[i].parameters(), lr=learning_rate))  
+		models.append(Net(fcnt_inp[i], 200, 150))
+		optimizers.append(torch.optim.Adam(models[i].parameters(), lr=learning_rate[i]))  
 
 	#creating arrays with dots for graph
 	x = [[], [], []]
 	y = [[], [], []]
 	vy = [[], [], []]
 
-	def train(epochs, model, X, Y, gx, gy, gvy, tX, tY, optimizer):
+	epoch_buffer = 30
+	ampl = 60
+
+	def train(epochs, model, X, Y, gx, gy, gvy, tX, tY, optimizer, llambda):
+		pr_avg = 1e9
+		cur_avg = 0
 		for epoch in range(epochs):
-			L = fit(model, X, Y, optimizer, 0.001)
-			vL = test(model, tX, tY, 0.001)
-			#print(f'epoch: {epoch:5d} loss: {L:.4f}' )
-			if ((epoch % 10) == 0):
-				print(f'epoch: {epoch:5d} loss: {L:.4f}, validation_loss: {vL:.4f}')
+			L = fit(model, X, Y, optimizer, llambda)
+			vL = test(model, tX, tY, llambda)
+			print(f'epoch: {epoch:5d} loss: {L:.4f}, validation_loss: {vL:.4f}')
+			if ((epoch % epoch_buffer) == 0):
+				#print(f'epoch: {epoch:5d} loss: {L:.4f}, validation_loss: {vL:.4f}')
+				if (epoch != 0):
+					if (cur_avg - ampl > pr_avg):
+						print(f'current average validation_loss is {(cur_avg / epoch_buffer):.5f}, previous avg val_loss is {(pr_avg / epoch_buffer):.5f}')
+						break
+					pr_avg = cur_avg
+					cur_avg = 0
 			gx.append(epoch)
 			gy.append(L)
 			gvy.append(vL)
+			cur_avg += vL
 
 	for i in range(3):
-		train(500, models[i], X[i], Y[i], x[i], y[i], vy[i], tX[i], tY[i], optimizers[i])
+		train(10000, models[i], X[i], Y[i], x[i], y[i], vy[i], tX[i], tY[i], optimizers[i], llambda[i])
 		plt.plot(x[i], y[i], 'g-', x[i], vy[i], 'r-')
 		plt.xlabel(r'$epoch$')
 		plt.ylabel(r'$loss$')
